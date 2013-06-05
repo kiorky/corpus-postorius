@@ -192,6 +192,36 @@ makina-projects.projectname:
        - "('it', _('Italia'))"
       # disable social auth by default
       SOCIALACCOUNT_PROVIDERS: {}
+    extra_settings: {}
+      # ldap auth
+      #AUTHENTICATION_BACKENDS: |
+      #  (
+      #      'django_auth_ldap.backend.LDAPBackend',
+      #      'django.contrib.auth.backends.ModelBackend',
+      #      'allauth.account.auth_backends.AuthenticationBackend',
+      #  )
+      #AUTH_LDAP_USER_DN_TEMPLATE: '"uid=%(user)s,ou=People,dc=a,dc=org"'
+      #AUTH_LDAP_START_TLS: 'True'
+      #AUTH_LDAP_SERVER_URI: '"ldap://ldap.a.net"'
+      #AUTH_LDAP_USER_ATTR_MAP: '{"email": a"shortMail"}'
+      #AUTH_LDAP_XXX_CONFIG_GROUP: |
+      #    ''
+      #    import ldap
+      #    from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
+      #    AUTH_LDAP_GROUP_SEARCH = LDAPSearch("ou=group,dc=a,dc=org",
+      #        ldap.SCOPE_SUBTREE, "(objectClass=groupOfNames)"
+      #        )
+      #    AUTH_LDAP_GROUP_TYPE = GroupOfNamesType()
+      #    AUTH_LDAP_BIND_DN = "{ldap_binddn}"
+      #    AUTH_LDAP_BIND_PASSWORD = "{ldap_binddn_passwd}"
+      #    p_ldap_admins = ["cn=foo,ou=group,dc=a,dc=org",
+      #                     "cn=bar,ou=group,dc=a,dc=org",
+      #                     "cn=sys,ou=group,dc=a,dc=org"]
+      #    AUTH_LDAP_USER_FLAGS_BY_GROUP = {
+      #        "is_active": "cn=all,ou=group,dc=a,dc=org",
+      #        "is_staff": p_ldap_admins[:],
+      #        "is_superuser": p_ldap_admins[:],
+      #    }
       #ADDITIONAL_TEMPLATE_DIRS:
       #  - '{project_root}/calanques'
       # add custom extra_settings which will be processed at end only
@@ -199,7 +229,6 @@ makina-projects.projectname:
       #  FOO: bar
       #  BAR: true
     # settings rendered as is (not via the macro
-    extra_settings: {}
   env_defaults:
     dev:
       django_settings:
