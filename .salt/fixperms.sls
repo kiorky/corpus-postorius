@@ -28,7 +28,6 @@
             find -H \
               "{{cfg.project_root}}" \
               "{{cfg.data_root}}" \
-              "{{cfg.var_dir}}" \
               \(\
                 \(     -type f -and \( -not -user {{cfg.user}} -or -not -group $datagroup                      \) \)\
                 -or \( -type d -and \( -not -user {{cfg.user}} -or -not -group $datagroup -or -not -perm -2000 \) \)\

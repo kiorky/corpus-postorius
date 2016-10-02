@@ -12,77 +12,38 @@
 # you can also merge parts of this file
 # with the relevant pillar
 
-{#
-   ALSO: copy & edit this to your pillar file to configure postfix
-#}
-{#
-{% set mail ='makina-states.services.mail.postfix' %}
-{{mail}}.inet_interfaces: [all]
-{{mail}}.mydestination:
-    "lists.foo.com": "OK"
-    "lists.foo.net": "OK"
-{{mail}}.transport_maps_param: >
-     hash:/srv/projects/mailman/project/bundler/var/data/postfix_lmtp,
-     hash:/etc/postfix/transport,
-     hash:/etc/postfix/transport.local
-{{mail}}.local_recipient_maps_param: |
-     hash:/srv/projects/mailman/project/bundler/var/data/postfix_lmtp
-{{mail}}.relay_domains_param: >
-     hash:/srv/projects/mailman/project/bundler/var/data/postfix_domains,
-     hash:/etc/postfix/relay_domains,
-     hash:/etc/postfix/relay_domains.local
-{{mail}}.owner_request_special: 'no'
-
-#}
-
-
-{# also think to restrict the smtp traffic via iptables,
-   in makina-states, via ms_iptables, or via the provider loadbalancer,
-   redirect only the wanted smtp traffic #}
-
 makina-projects.projectname:
   data:
     default_language: fr
     site_owner: "root@{fqdn}"
-    var_dir: "{data_root}/var"
-    spool: "{var_dir}/spool"
     PROJECT: mailman_web
     fixperms_cron_periodicity: "0 */2 * * *"
-    app_root: "{project_root}/bundler"
+    app_root: "{project_root}/venv/src/postorius/example_project"
     locale_cwd: "{app_root}"
-    app_url: "https://gitlab.com/mailman/mailman-bundler.git"
-    app_url_rev: "master"
-    app_url_type: git
-    #app_url_tar_opts: "xzvf"
-    #app_url_archive_format: tar
-    app_download_root: "{app_root}"
-    #app_url_hash: "md5=123"
-    #app_archive_test_exists: 'test ! -e {data_root}/www/index.php'
-    js_dir: "{app_root}/front_end"
-    gulp_targets: ["clean-build"]
+    do_node: true
     do_bower: false
     do_gulp: false
     configs:
       {% for i in ['settings_local.py',] %}
       "{{i}}":
         source: "salt://makina-projects/{name}/files/config.py"
-        target: "{app_root}/{PROJECT}/{{i}}"
+        target: "{app_root}/{{i}}"
         mode: 640
       {%endfor%}
-      buildout-salt.cfg:
-        source: "salt://makina-projects/{name}/files/buildout.cfg"
-        target: "{app_root}/buildout-salt.cfg"
-        mode: 640
+    #npms: "less"
+    global_npms: "less"
     htaccess: "/etc/{name}.webaccess"
     doc_root: "{static}"
     #orig_py: /usr/bin/python3
     py: "{py_root}/bin/python"
     py_root: "{project_root}/venv"
+    pip_root: "{project_root}"
     media_source: "{project_root}/media"
     domain: "{fqdn}"
     requirements: "{project_root}/requirements/prod.txt"
     server_aliases: []
-    #force_ssl: false
+    js_dir: "{project_root}"
+    force_ssl: true
     #disabled_urls []
     #ldap_url: "ldap://ldap.net/dc=m,dc=com?uid?sub?(objectClass=person)"
     #ldap_binddn: "uid=f,dc=e,dc=e"
@@ -90,8 +51,8 @@ makina-projects.projectname:
     postfix: true
     #admin_url: /admin
     #admin_allowed_ips :[]
-    DJANGO_SETTINGS_MODULE: "mailman_web.production"
-    WSGI: "{PROJECT}.wsgi:application"
+    DJANGO_SETTINGS_MODULE: "settings"
+    WSGI: "wsgi:application"
     nginx_loglevel: "crit"
     nginx_upstreams: salt://makina-projects/{name}/files/nginx.upstreams.conf
     nginx_vhost: salt://makina-projects/{name}/files/nginx.content.conf
@@ -106,6 +67,7 @@ makina-projects.projectname:
     #          user: eib-user, shell: /bin/bash, mode: "0771"}
     #  - ftpuser: {'password': 'xxx', "home": "{data_root}/foo"}
     create_admins: true
+    # salt-call  mc_macros.get_local_registry local_passwords registry_format=pack
     admins:
       {% for i in ['sysadmin'] %}
       - {{i}}:
@@ -116,12 +78,13 @@ makina-projects.projectname:
     static: "{data_root}/static"
     media: "{data_root}/media"
     host: localhost
-    port: 8000
+    port: 8002
     workers: 10
     worker_class: sync
     worker_timeout: 9000
-    compile_messages: true
+    compile_messages: false
     collect_static: true
+    do_reset_site: true
     do_syncdb: false
     do_migrate: true
     do_syncdb_only_first_time: false
@@ -130,39 +93,8 @@ makina-projects.projectname:
     # extra django settings to add
     # to the file
     USE_SSL: True
-    buildout:
-      settings:
-        sources:
-          hyperkitty: 'git https://gitlab.com/mailman/hyperkitty.git rev=74db8cda1891554cdf4dd623b9815f4584be750f'
-          mailmanclient: 'git https://gitlab.com/mailman/mailmanclient.git rev=1b25268ba10c921db3668d5d34177b64a0da03ed'
-          postorius: 'git https://gitlab.com/mailman/postorius.git rev=1c1a759f79f9fe94914d5622289c727dc6ea54ff'
-          django-mailman3: 'git https://gitlab.com/mailman/django-mailman3.git rev=feb256e430c47830affbd31bfb1fc130f67e451e'
-        buildout:
-          git--mailman: '-e git+https://gitlab.com/mailman/mailman.git@c23519b5262fd264ed0f9e5bc23b901ed7eee632#egg=mailman'
-          git--mailman-hyperkitty: '-e git+https://gitlab.com/mailman/mailman-hyperkitty.git@cb2df4dade95c210496a5e1c52b9401914a03c4a#egg=mailman-hyperkitty'
-          extends: buildout.cfg
-          parts: main mailman templates gunicorn
-          extensions: 'mr.developer'
-          auto-checkout: |
-                         mailmanclient
-                           postorius
-                           django-mailman3
-                           hyperkitty
-        configuration:
-          deployment: production
-        mailman:
-          python3-version: 3.4
-          on_install: true
-          cmds: |
-              if test ! -e ${mailman:venv-dir};then virtualenv -p python${mailman:python3-version} ${mailman:venv-dir};fi
-                  ${mailman:venv-dir}/bin/pip install ${buildout:git--mailman}
-                  ${mailman:venv-dir}/bin/pip install ${buildout:git--mailman-hyperkitty}
-        mailman-web:
-          'eggs+': |
-                   django-auth-ldap
-                       ipython
     django_settings:
-      #
+      DOMAIN: "{domain}"
       ADMINS: "placeholder (totally computed)"
       VAR_DIR: "{spool}"
       SITE_ID: 1
@@ -179,7 +111,7 @@ makina-projects.projectname:
           USER: '{name}'
           PORT: 5432
           HOST: '127.0.0.1'
-          NAME: 'db'
+          NAME: '{name}'
           PASSWORD: '{name}secret'
           #ENGINE: 'django.db.backends.mysql'
           #USER: '{name}'
@@ -258,6 +190,8 @@ makina-projects.projectname:
        - "('fr', _('French'))"
        - "('en', _('English'))"
        - "('it', _('Italia'))"
+      # disable social auth by default
+      SOCIALACCOUNT_PROVIDERS: {}
       #ADDITIONAL_TEMPLATE_DIRS:
       #  - '{project_root}/calanques'
       # add custom extra_settings which will be processed at end only
@@ -265,26 +199,7 @@ makina-projects.projectname:
       #  FOO: bar
       #  BAR: true
     # settings rendered as is (not via the macro
-    extra_settings:
-      #AUTH_LDAP_SERVER_URI: "'ldaps://ldap.foo.net'"
-      #AUTH_LDAP_USER_DN_TEMPLATE: "'cn=%(user)s,ou=Users,dc=foo,dc=net'"
-      AUTHENTICATION_BACKENDS: |
-        (
-        #'social.backends.open_id.OpenIdAuth',
-        # http://python-social-auth.readthedocs.org/en/latest/backends/google.html
-        #'social.backends.google.GoogleOpenId',
-        #'social.backends.google.GoogleOAuth2',
-        #'social.backends.twitter.TwitterOAuth',
-        #'social.backends.yahoo.YahooOpenId',
-        #'django_browserid.auth.BrowserIDBackend',
-        # for LDAP
-        #  'django_auth_ldap.backend.LDAPBackend',
-        #
-        'django.contrib.auth.backends.ModelBackend',
-        )
-      AUTH_LDAP_USER_ATTR_MAP: "{'first_name': 'name', 'email': 'mail'}"
-      USE_INTERNAL_AUTH: 'True'
-      AUTH_LDAP_START_TLS: 'True'
+    extra_settings: {}
   env_defaults:
     dev:
       django_settings:

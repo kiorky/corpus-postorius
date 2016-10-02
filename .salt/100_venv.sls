@@ -2,17 +2,6 @@
 {% set data = cfg.data %}
 {% set scfg = salt['mc_utils.json_dump'](cfg) %}
 
-py34:
-  cmd.run:
-    - name: add-apt-repository ppa:fkrull/deadsnakes -y -u
-    - onlyif: test ! -e /usr/bin/python3.4
-  pkg.installed: 
-    - pkgs: [python3.4, python3.4-dev, libpython3.4-dev,  libpython3.4]
-    - require:
-      - cmd: py34
-    - require_in:
-      - virtualenv: {{cfg.name}}-venv
-
 {{cfg.name}}-venv:
   virtualenv.managed:
     - name: {{data.py_root}}
@@ -46,7 +35,7 @@ py34:
 
     - env:
        - CFLAGS: "-I/usr/include/gdal"
-    - cwd: {{data.app_root}}
+    - cwd: {{data.pip_root}}
     - use_vt: true
     - download_cache: {{cfg.data_root}}/cache
     - user: {{cfg.user}}

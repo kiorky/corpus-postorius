@@ -31,28 +31,76 @@ include:
               fi
             fi
     - watch_in:
-      - file: {{cfg.name}}-config
+      - mc_proxy: "{{cfg.name}}-configs-post"
       - cmd: {{cfg.name}}-start-all
 
-{{cfg.name}}-config:
-  file.exists:
-    - name: "{{data.configs['settings_local.py']['target']}}"
-    - watch:
-      - mc_proxy: "{{cfg.name}}-configs-post"
-
-postupdate-{{cfg.name}}:
+{% if data.get('collect_static', True) %}
+static-{{cfg.name}}:
   cmd.run:
-    - name: |
-            . ../venv/bin/activate
-            ./bin/mailman-post-update
+    - name: {{data.py}} manage.py collectstatic --noinput
     {{set_env()}}
-    - use_vt: true
     - cwd: {{data.app_root}}
+    - user: {{cfg.user}}
+    - watch:
+      - mc_proxy: {{cfg.name}}-configs-post
+
+    - watch_in:
+      - cmd: {{cfg.name}}-start-all
+{% endif %}
+
+{% if data.get('compile_messages', True) %}
+msg-{{cfg.name}}:
+  cmd.run:
+    - name: {{data.py}} manage.py compilemessages
+    {{set_env()}}
+    - cwd: {{data.locale_cwd}}
     - user: {{cfg.user}}
     - watch:
       - mc_proxy: {{cfg.name}}-configs-post
     - watch_in:
       - cmd: {{cfg.name}}-start-all
+{% endif %}
+
+syncdb-{{cfg.name}}:
+  cmd.run:
+    - name: |
+            set -e
+            {% if data.get('do_syncdb', True) %}
+            {{data.py}} manage.py syncdb --noinput
+            {% endif %}
+            {% if data.get('do_migrate', True) %}
+            {{data.py}} manage.py migrate --noinput
+            {% endif %}
+            {% if data.get('do_syncdb_only_first_time', False) %}
+            touch "{{cfg.data_root}}/installed"
+            {% endif %}
+    {% if data.get('do_syncdb_only_first_time', False) %}
+    - onlyif: test ! -e "{{cfg.data_root}}/installed"
+    {% endif %}
+    {{set_env()}}
+    - cwd: {{data.app_root}}
+    - user: {{cfg.user}}
+    - use_vt: true
+    - output_loglevel: info
+    - watch:
+      - mc_proxy: {{cfg.name}}-configs-post
+    - watch_in:
+      - cmd: {{cfg.name}}-start-all
+
+{% if data.media_source != data.media %}
+media-{{cfg.name}}:
+  cmd.run:
+    - name: rsync -av {{data.media_source}}/ {{data.media}}/
+    - onlyif: test -e {{data.media_source}}
+    - cwd: {{data.app_root}}
+    - user: {{cfg.user}}
+    - use_vt: true
+    - output_loglevel: info
+    - watch:
+      - mc_proxy: {{cfg.name}}-configs-post
+    - watch_in:
+      - cmd: {{cfg.name}}-start-all
+{% endif %}
 
 {% if data.get('create_admins', True) %}
 {% for dadmins in data.admins %}
@@ -62,7 +110,7 @@ user-{{cfg.name}}-{{admin}}:
   file.managed:
     - name: "{{f}}"
     - contents: |
-                #!{{data.app_root}}/bin/python
+                #!{{data.py}}
                 import os
                 try:
                     import django;django.setup()
@@ -81,16 +129,16 @@ user-{{cfg.name}}-{{admin}}:
     - user: {{cfg.user}}
     - watch:
       - mc_proxy: {{cfg.name}}-configs-post
-      - cmd: postupdate-{{cfg.name}}
+      - cmd: syncdb-{{cfg.name}}
   cmd.run:
-    - name: bin/mailman-web-django-admin createsuperuser --username="{{admin}}" --email="{{udata.mail}}" --noinput
+    - name: {{data.py}} manage.py createsuperuser --username="{{admin}}" --email="{{udata.mail}}" --noinput
     - unless: "{{f}}"
     {{set_env()}}
     - cwd: {{data.app_root}}
     - user: {{cfg.user}}
     - watch:
       - mc_proxy: {{cfg.name}}-configs-post
-      - cmd: postupdate-{{cfg.name}}
+      - cmd: syncdb-{{cfg.name}}
       - file: user-{{cfg.name}}-{{admin}}
     - watch_in:
       - cmd: {{cfg.name}}-start-all
@@ -99,7 +147,7 @@ user-{{cfg.name}}-{{admin}}:
 superuser-{{cfg.name}}-{{admin}}:
   file.managed:
     - contents: |
-                #!{{data.app_root}}/bin/python
+                #!{{data.py}}
                 import os
                 try:
                     import django;django.setup()
@@ -119,7 +167,7 @@ superuser-{{cfg.name}}-{{admin}}:
     - name: "{{f}}"
     - watch:
       - mc_proxy: {{cfg.name}}-configs-post
-      - cmd: postupdate-{{cfg.name}}
+      - cmd: syncdb-{{cfg.name}}
   cmd.run:
     {{set_env()}}
     - name: {{f}}
@@ -133,6 +181,45 @@ superuser-{{cfg.name}}-{{admin}}:
 {%endfor %}
 {%endfor %}
 {%endif %}
+
+{% if data.get('do_reset_site', False) %}
+{% set f = data.app_root + '/salt_reset_site.py' %}
+{{cfg.name}}-reset-django-site:
+  file.managed:
+    - name: "{{f}}"
+    - contents: |
+                #!{{data.py}}
+                import os
+                try:
+                    import django;django.setup()
+                except Exception:
+                    pass
+                from django.contrib.sites.models import Site
+                import settings
+                site = Site.objects.get(id=settings.SITE_ID)
+                site.domain = settings.DOMAIN
+                site.name = settings.DOMAIN
+                site.save()                
+    - mode: 700
+    - template: jinja
+    - user: {{cfg.user}}
+    - group: {{cfg.group}}
+    - source: ""
+    - cwd: {{data.app_root}}
+    - user: {{cfg.user}}
+    - watch:
+      - mc_proxy: {{cfg.name}}-configs-post
+      - cmd: syncdb-{{cfg.name}}
+  cmd.run:
+    - name: {{data.py}} {{f}}
+    {{set_env()}}
+    - cwd: {{data.app_root}}
+    - user: {{cfg.user}}
+    - watch:
+      - mc_proxy: {{cfg.name}}-configs-post
+    - watch_in:
+      - cmd: {{cfg.name}}-start-all
+{%endif%}
 
 {{cfg.name}}-start-all:
   cmd.run:
@@ -152,21 +239,3 @@ superuser-{{cfg.name}}-{{admin}}:
                 ( sleep 1 && circusctl start {{cfg.name}}-django ) ||\
                 ( sleep 1 && circusctl start {{cfg.name}}-django )
             fi
-
-{{cfg.name}}-crons:
-  file.managed:
-    - name: /etc/cron.d/{{cfg.name}}crons
-    - mode: 600
-    - contents: |
-        @hourly            su -l {{cfg.user}} -c "{{data.app_root}}/bin/mailman-web-django-admin runjobs hourly         >/dev/null 2>&1"
-        @daily             su -l {{cfg.user}} -c "{{data.app_root}}/bin/mailman-web-django-admin runjobs daily          >/dev/null 2>&1"
-        @weekly            su -l {{cfg.user}} -c "{{data.app_root}}/bin/mailman-web-django-admin runjobs weekly         >/dev/null 2>&1"
-        @monthly           su -l {{cfg.user}} -c "{{data.app_root}}/bin/mailman-web-django-admin runjobs monthly        >/dev/null 2>&1"
-        @yearly            su -l {{cfg.user}} -c "{{data.app_root}}/bin/mailman-web-django-admin runjobs yearly         >/dev/null 2>&1"
-        0,15,30,45 * * * * su -l {{cfg.user}} -c "{{data.app_root}}/bin/mailman-web-django-admin runjobs quarter_hourly >/dev/null 2>&1"
-        * * * * *          su -l {{cfg.user}} -c "{{data.app_root}}/bin/mailman-web-django-admin runjobs minutely       >/dev/null 2>&1"
-    - watch:
-      - cmd: {{cfg.name}}-start-all
-
-
-

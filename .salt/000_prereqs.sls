@@ -85,9 +85,9 @@ prepreqs-{{cfg.name}}:
     - group: {{cfg.group}}
     - watch:
       - pkg: prepreqs-{{cfg.name}}
-    - names: 
-      - {{cfg.data.spool}}
-      - {{cfg.data.var_dir}}
+    - names:
+      - {{cfg.data.static}}
+      - {{cfg.data.media}}
 
 {% for d, i in {
       cfg.project_root+'/cache': cfg.data_root+'/cache',

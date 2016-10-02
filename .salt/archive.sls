@@ -10,19 +10,4 @@
               mkdir -p "{{dest}}";
             fi;
             rsync -Aa --delete "{{cfg.project_root}}/" "{{dest}}/"
-            {% if 'postgres' in db.ENGINE %}
-            apt-get install -y --force-yes postgresql-client
-            set +e
-            export PGPASSWORD="{{db.PASSWORD}}"
-            export PGUSER="{{db.USER}}"
-            export PGHOST="{{db.HOST}}"
-            export PGDATABASE="{{db.NAME}}"
-            echo "SELECT 1 FROM pg_database WHERE datname='{{db.NAME}}';" |\
-              psql postgres| grep -q 1
-            if [ "x$?" = "x0" ]
-            then
-              pg_dump -f "{{dest}}/dump.sql"
-            fi
-            set -e
-            {% endif %}
     - user: root

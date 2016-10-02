@@ -30,5 +30,17 @@
     - watch_in:
       - mc_proxy: {{cfg.name}}-configs-after
 
+{{cfg.name}}-patch:
+  cmd.run:
+    - watch:
+      - mc_proxy: {{cfg.name}}-configs-post
+    - watch_in:
+      - mc_proxy: {{cfg.name}}-configs-after
+    - name: |
+            set -ex
+            cd {{data.app_root}}
+            sed -i -re 's|#!/usr/bin/python|#!/usr/bin/env python|g' *.py  
+
 {{cfg.name}}-configs-after:
   mc_proxy.hook: []
+

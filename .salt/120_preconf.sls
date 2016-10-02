@@ -34,9 +34,3 @@ include:
     - watch_in:
       - mc_proxy: {{cfg.name}}-configs-before
 
-{{cfg.name}}-lnk:
-  file.symlink:
-    - name: "{{data.app_root}}/var"
-    - target: "{{data.var_dir}}"
-    - watch_in:
-      - mc_proxy: {{cfg.name}}-configs-before

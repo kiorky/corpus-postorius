@@ -1,2 +1,11 @@
-
+Django>1.8,<1.10
+django-auth-ldap
+ipython
 psycopg2
+-e git+https://gitlab.com/mailman/hyperkitty.git@74db8cda1891554cdf4dd623b9815f4584be750f#egg=hyperkitty
+-e git+https://gitlab.com/mailman/mailmanclient.git@1b25268ba10c921db3668d5d34177b64a0da03ed#egg=mailmanclient
+-e git+https://gitlab.com/mailman/postorius.git@1c1a759f79f9fe94914d5622289c727dc6ea54ff#egg=postorius
+-e git+https://gitlab.com/mailman/django-mailman3.git@feb256e430c47830affbd31bfb1fc130f67e451e#egg=django-mailman3
+django-allauth
+django-gravatar
+gunicorn
