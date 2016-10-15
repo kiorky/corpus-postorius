@@ -2,11 +2,12 @@ Django>1.8,<1.10
 django-auth-ldap
 ipython
 psycopg2
--e git+https://gitlab.com/mailman/hyperkitty.git@74db8cda1891554cdf4dd623b9815f4584be750f#egg=hyperkitty
--e git+https://gitlab.com/mailman/mailmanclient.git@1b25268ba10c921db3668d5d34177b64a0da03ed#egg=mailmanclient
+-e git+https://gitlab.com/mailman/hyperkitty.git@56d71938091a123e7d85119d6544039a92c0e6e9#egg=hyperkitty
+-e git+https://gitlab.com/mailman/mailmanclient.git@fd6c857b3474a97c2a74a5349646723e203fc389#egg=mailmanclient
 -e git+https://gitlab.com/mailman/postorius.git@1c1a759f79f9fe94914d5622289c727dc6ea54ff#egg=postorius
--e git+https://gitlab.com/mailman/django-mailman3.git@feb256e430c47830affbd31bfb1fc130f67e451e#egg=django-mailman3
+-e git+https://gitlab.com/mailman/django-mailman3.git@28d7e4224d9c625fca649613f8edbaf31edc7f04#egg=django-mailman3
 django-auth-ldap
 django-allauth
 django-gravatar
 gunicorn
+#whoosh
