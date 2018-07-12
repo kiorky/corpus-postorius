@@ -34,7 +34,7 @@ makina-projects.projectname:
     global_npms: "less"
     htaccess: "/etc/{name}.webaccess"
     doc_root: "{static}"
-    #orig_py: /usr/bin/python3
+    orig_py: /usr/bin/python3.5
     py: "{py_root}/bin/python"
     py_root: "{project_root}/venv"
     pip_root: "{project_root}"

@@ -1,12 +1,13 @@
-Django>1.8,<1.10
 ipython
-psycopg2
--e git+https://gitlab.com/mailman/hyperkitty.git@ef692f30ca25d3a11f1c76851725698976175307#egg=hyperkitty
--e git+https://gitlab.com/mailman/mailmanclient.git@15195ac6d66abe53c0d00bc2932e1e1d7dc4a12e#egg=mailmanclient
--e git+https://gitlab.com/mailman/postorius.git@93268ad0367126c100f8042a2e7b03570bce789b#egg=postorius
--e git+https://gitlab.com/mailman/django-mailman3.git@21de913faf3416c1562427fc7d407cfe308ab3aa#egg=django-mailman3
+psycopg2-binary
+-e git+https://gitlab.com/mailman/hyperkitty.git@f09ae75ad2c7051036a6325f8edac1f7d827fb1b#egg=hyperkitty
+-e git+https://gitlab.com/mailman/mailmanclient.git@3.2.0#egg=mailmanclient
+-e git+https://gitlab.com/mailman/postorius.git@8613712adbff2e8e9105206181dca7875a27c1a0#egg=postorius
+-e git+https://gitlab.com/mailman/django-mailman3.git@51ffba2a485e980177cbd9ced2dc835860b7040f#egg=django-mailman3
 django-auth-ldap
 django-allauth
 django-gravatar
 gunicorn
 #whoosh
+
+# vim: set tw=0:
